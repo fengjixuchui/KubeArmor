@@ -1,12 +1,8 @@
-# KubeArmor
-
 ![KubeArmor Logo](.gitbook/assets/logo.png)
-
-## Introduction to KubeArmor
 
 [![Build Status](https://github.com/kubearmor/KubeArmor/actions/workflows/ci-go.yml/badge.svg)](https://github.com/kubearmor/KubeArmor/actions/workflows/ci-go.yml/)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5401/badge)](https://bestpractices.coreinfrastructure.org/projects/5401)
-[![Slack](https://KubeArmor.herokuapp.com/badge.svg)](https://KubeArmor.herokuapp.com)
+[![Slack](https://img.shields.io/badge/Join%20Our%20Community-Slack-blue)](https://join.slack.com/t/kubearmor/shared_invite/zt-1ltmqdbc6-rSHw~LM6MesZZasmP2hAcA)
 [![Discussions](https://img.shields.io/badge/Got%20Questions%3F-Chat-Violet)](https://github.com/kubearmor/KubeArmor/discussions)
 
 KubeArmor is a cloud-native runtime security enforcement system that restricts the behavior \(such as process execution, file access, and networking operations\) of containers and nodes (VMs) at the system level.
@@ -60,14 +56,14 @@ If you want to make a contribution, please refer to the following documents too.
 
 ### Biweekly Meetup
 
-- Where: [Zoom Link](https://bit.ly/KubeArmor-zoom)
+- Where: [Zoom Link](https://bit.ly/kubearmor-zoom)
 - Minutes: [Document](https://docs.google.com/document/d/1IqIIG9Vz-PYpbUwrH0u99KYEM1mtnYe6BHrson4NqEs/edit)
 - Calendar invite: [Google Calendar](https://calendar.google.com/event?action=TEMPLATE&tmeid=MWN0MTlzYWFoM2tkcXZidTk1cHZjNjNyOGtfMjAyMjAyMTBUMTUwMDAwWiBjXzJmMXRiYnNqNWdrNmdnbGpzMzA4NnAwamw4QGc&tmsrc=c_2f1tbbsj5gk6ggljs3086p0jl8%40group.calendar.google.com&scp=ALL)
 - ICS: [ICS file](getting-started/resources/KubeArmorMeetup.ics) for setting up meeting on your calendar
 
 ### Slack
 
-Please join the [KubeArmor Slack channel](https://KubeArmor.herokuapp.com) to communicate with KubeArmor community. We always welcome having a discussion about the problems that you face during the use of KubeArmor.
+Please join the [KubeArmor Slack channel](https://join.slack.com/t/kubearmor/shared_invite/zt-1ltmqdbc6-rSHw~LM6MesZZasmP2hAcA) to communicate with KubeArmor community.
 
 ## License
 
@@ -76,7 +72,7 @@ The eBPF-based container monitor is licensed under the General Public License, V
 
 ## Notice/Credits
 
-- KubeArmor uses [Tracee](https://github.com/aquasecurity/tracee/)'s system call handling functions developed by [Aqua Security](https://aquasec.com).
+- KubeArmor uses [Tracee](https://github.com/aquasecurity/tracee/)'s system call utility functions developed by [Aqua Security](https://aquasec.com).
 
 ## CNCF
 
