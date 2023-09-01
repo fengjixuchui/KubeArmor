@@ -24,6 +24,7 @@ type EventResult struct {
 }
 
 var eventChan chan klog.EventInfo
+var grpc = "localhost:32767"
 
 const maxEvents = 128
 
@@ -123,6 +124,16 @@ func getAlertWithInfo(alert *pb.Alert, target *pb.Alert) bool {
 			return false
 		}
 	}
+	if target.NamespaceName != "" {
+		if alert.NamespaceName != target.NamespaceName {
+			return false
+		}
+	}
+	if target.Data != "" {
+		if !strings.Contains(alert.Data, target.Data) {
+			return false
+		}
+	}
 
 	return true
 }
@@ -176,13 +187,14 @@ func KarmorLogStart(logFilter string, ns string, op string, pod string) error {
 		eventChan = make(chan klog.EventInfo, maxEvents)
 	}
 	go func() {
-		err := klog.StartObserver(klog.Options{
+		err := klog.StartObserver(k8sClient, klog.Options{
 			LogFilter: logFilter,
 			Namespace: ns,
 			Operation: op,
 			PodName:   pod,
 			MsgPath:   "none",
 			EventChan: eventChan,
+			GRPC:      grpc,
 		})
 		if err != nil {
 			log.Errorf("failed to start observer. Error=%s", err.Error())
@@ -234,4 +246,39 @@ func KarmorGetLogs(timeout time.Duration, maxEvents int) ([]*pb.Log, []*pb.Alert
 // KarmorLogStop stops the kubearmor-client observer
 func KarmorLogStop() {
 	klog.StopObserver()
+}
+
+// GetOperations Function
+func GetOperations(logs []*pb.Log) []string {
+	optsMap := make(map[string]int)
+	opts := []string{}
+	for _, log := range logs {
+		optsMap[log.Operation] = 1
+	}
+	for operation := range optsMap {
+		opts = append(opts, strings.ToLower(operation))
+	}
+
+	return opts
+}
+
+// IsOperationsExpected validates what KubeArmor Operation is expected based on visibility configuration
+func IsOperationsExpected(operations []string, expected []string) bool {
+	if len(operations) != len(expected) {
+		return true
+	}
+	for _, operation := range operations {
+		found := false
+		for _, expectedOp := range expected {
+			if operation == expectedOp {
+				found = true
+				break
+			}
+		}
+		if !found {
+			fmt.Printf("Operation not found %v %v", operation, expected)
+			return false
+		}
+	}
+	return true
 }

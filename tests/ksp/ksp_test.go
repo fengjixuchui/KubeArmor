@@ -4,13 +4,16 @@
 package ksp
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kubearmor/KubeArmor/protobuf"
 	. "github.com/kubearmor/KubeArmor/tests/util"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = BeforeSuite(func() {
@@ -30,6 +33,10 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	// delete multiubuntu deployment
+	err := K8sDelete([]string{"multiubuntu/multiubuntu-deployment.yaml"})
+	Expect(err).To(BeNil())
+
 	KubearmorPortForwardStop()
 })
 
@@ -43,19 +50,58 @@ func getUbuntuPod(name string, ant string) string {
 var _ = Describe("Ksp", func() {
 	var ub1, ub3, ub4 string
 	BeforeEach(func() {
-		ub1 = getUbuntuPod("ubuntu-1",
-			"container.apparmor.security.beta.kubernetes.io/ubuntu-1-container: localhost/kubearmor-multiubuntu-ubuntu-1-deployment-ubuntu-1-container")
-		ub3 = getUbuntuPod("ubuntu-3",
-			"container.apparmor.security.beta.kubernetes.io/ubuntu-3-container: localhost/kubearmor-multiubuntu-ubuntu-3-deployment-ubuntu-3-container")
-		ub4 = getUbuntuPod("ubuntu-4",
-			"container.apparmor.security.beta.kubernetes.io/ubuntu-4-container: localhost/kubearmor-multiubuntu-ubuntu-4-deployment-ubuntu-4-container")
-		fmt.Print(ub1, ub4, ub3)
+		ub1 = getUbuntuPod("ubuntu-1", "kubearmor-policy: enabled")
+		ub3 = getUbuntuPod("ubuntu-3", "kubearmor-policy: enabled")
+		ub4 = getUbuntuPod("ubuntu-4", "kubearmor-policy: enabled")
 	})
 
 	AfterEach(func() {
 		KarmorLogStop()
 		err := DeleteAllKsp()
 		Expect(err).To(BeNil())
+	})
+
+	Describe("Annotation", func() {
+		It("can annotate pre existing pod", func() {
+			k8sClient := GetK8sClient()
+			// ReplicaSet
+			podSelector := metav1.ListOptions{
+				LabelSelector: "pre-run-pod-test=true",
+			}
+			pods, err := k8sClient.K8sClientset.CoreV1().Pods("nginx").List(context.TODO(), podSelector)
+			Expect(err).To(BeNil())
+
+			if len(pods.Items) == 0 {
+				fmt.Printf(" No pods with label pre-run-pod-test=true found ")
+				return
+			}
+
+			for _, item := range pods.Items {
+				annotated := false
+				for key, value := range item.Annotations {
+					fmt.Printf("K8sGetPods pod=%s ns=%s Annotation Key=%v value=%s", item.Name, "nginx", key, value)
+					if key == "kubearmor-policy" {
+						annotated = true
+					}
+
+				}
+				Expect(annotated).To(BeTrue())
+			}
+
+			err = KarmorLogStart("all", "nginx", "", pods.Items[0].Name)
+			Expect(err).To(BeNil())
+
+			sout, _, err := K8sExecInPod(pods.Items[0].Name, "nginx", []string{"ls"})
+			Expect(err).To(BeNil())
+			fmt.Printf("---START---\n%s---END---\n", sout)
+
+			// check audit logs
+			logs, _, err := KarmorGetLogs(5*time.Second, 50)
+			Expect(err).To(BeNil())
+			Expect(len(logs)).NotTo(Equal(0))
+
+		})
+
 	})
 
 	Describe("Apply Network Policies", func() {
@@ -796,6 +842,13 @@ var _ = Describe("Ksp", func() {
 		})
 
 		It("it can audit accessing a file owner only from source path", func() {
+
+			if strings.Contains(K8sCRIRuntime(), "cri-o") {
+				// We have issues with audit policy matching with owner related logs due to inconsistent storage mounts
+				// Please check issue for more details : https://github.com/kubearmor/KubeArmor/issues/1178
+				// We will revert the skip after the issue is handled
+				Skip("Skipping due to issue with policy matcher in context of owner only alerts")
+			}
 
 			// Apply Policy
 			err := K8sApplyFile("multiubuntu/ksp-group-2-audit-file-path-owner-from-source-path.yaml")

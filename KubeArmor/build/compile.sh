@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2021 Authors of KubeArmor
 
@@ -11,4 +11,4 @@ else
     make
 fi
 
-cp *.bpf.o ignore.lst /opt/kubearmor/BPF/
+cp *.bpf.o /opt/kubearmor/BPF/

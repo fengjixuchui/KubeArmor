@@ -27,6 +27,10 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	// Delete wordpress-mysql app
+	err := K8sDelete([]string{"res/wordpress-mysql-deployment.yaml"})
+	Expect(err).To(BeNil())
+
 	KubearmorPortForwardStop()
 })
 
@@ -42,10 +46,8 @@ var _ = Describe("Smoke", func() {
 	var sql string
 
 	BeforeEach(func() {
-		wp = getWpsqlPod("wordpress-",
-			"container.apparmor.security.beta.kubernetes.io/wordpress: localhost/kubearmor-wordpress-mysql-wordpress-wordpress")
-		sql = getWpsqlPod("mysql-",
-			"container.apparmor.security.beta.kubernetes.io/mysql: localhost/kubearmor-wordpress-mysql-mysql-mysql")
+		wp = getWpsqlPod("wordpress-", "kubearmor-policy: enabled")
+		sql = getWpsqlPod("mysql-", "kubearmor-policy: enabled")
 	})
 
 	AfterEach(func() {
@@ -187,6 +189,7 @@ var _ = Describe("Smoke", func() {
 			_, alerts, err := KarmorGetLogs(5*time.Second, 1)
 			Expect(err).To(BeNil())
 			Expect(len(alerts)).To(BeNumerically(">=", 1))
+			fmt.Printf("---Alert---\n%s", alerts[0].String())
 			Expect(alerts[0].PolicyName).To(Equal("ksp-wordpress-lenient-allow-sa"))
 			Expect(alerts[0].Severity).To(Equal("7"))
 
@@ -234,6 +237,7 @@ var _ = Describe("Smoke", func() {
 			_, alerts, err := KarmorGetLogs(5*time.Second, 1)
 			Expect(err).To(BeNil())
 			Expect(len(alerts)).To(BeNumerically(">=", 1))
+			fmt.Printf("---Alert---\n%s", alerts[0].String())
 			Expect(alerts[0].PolicyName).To(Equal("ksp-mysql-audit-dir"))
 			Expect(alerts[0].Severity).To(Equal("5"))
 
