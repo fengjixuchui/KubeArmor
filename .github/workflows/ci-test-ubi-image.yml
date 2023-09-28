@@ -1,4 +1,4 @@
-name: ci-test-ginkgo
+name: ci-test-ubi-ginkgo
 
 on:
   push:
@@ -25,8 +25,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
-        runtime: ["docker", "containerd", "crio"]
+        os: ["bpflsm"]
+        
+        runtime: ["crio"]
+  
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -35,7 +38,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: "v1.20"
-
+ 
       - name: Install the latest LLVM toolchain
         run: ./.github/workflows/install-llvm.sh
 
@@ -54,31 +57,16 @@ jobs:
         run: |
           make docker-build
 
-      - name: deploy pre existing pod 
-        run: |
-          kubectl apply -f ./tests/ksp/pre-run-pod.yaml
-          sleep 60
-          kubectl get pods -A
-
       - name: Run KubeArmor
         run: |
-          if [ ${{ matrix.runtime }} == "containerd" ]; then
-            docker save kubearmor/kubearmor-init:latest | sudo k3s ctr images import -
-            docker save kubearmor/kubearmor:latest | sudo k3s ctr images import -
-            docker save kubearmor/kubearmor-operator:latest | sudo k3s ctr images import -
-            docker save kubearmor/kubearmor-snitch:latest | sudo k3s ctr images import -
-          else
-            if [ ${{ matrix.runtime }} == "crio" ]; then
-              sudo podman pull docker-daemon:kubearmor/kubearmor-init:latest
-              sudo podman pull docker-daemon:kubearmor/kubearmor:latest
-              sudo podman pull docker-daemon:kubearmor/kubearmor-operator:latest
-              sudo podman pull docker-daemon:kubearmor/kubearmor-snitch:latest
-            fi
-          fi
+          sudo podman pull docker-daemon:kubearmor/kubearmor-init:latest
+          sudo podman pull docker-daemon:kubearmor/kubearmor-ubi:latest
+          sudo podman pull docker-daemon:kubearmor/kubearmor-operator:latest
+          sudo podman pull docker-daemon:kubearmor/kubearmor-snitch:latest
           helm upgrade --install kubearmor-operator ./deployments/helm/KubeArmorOperator -n kubearmor --create-namespace
           kubectl wait --for=condition=ready --timeout=5m -n kubearmor pod -l kubearmor-app=kubearmor-operator
           kubectl get pods -A
-          kubectl apply -f pkg/KubeArmorOperator/config/samples/kubearmor-test.yaml
+          kubectl apply -f pkg/KubeArmorOperator/config/samples/kubearmor-ubi-test.yaml
           kubectl wait -n kubearmor --timeout=5m --for=jsonpath='{.status.phase}'=Running kubearmorconfigs/kubearmorconfig-test
           kubectl wait --timeout=5m --for=condition=ready pod -l kubearmor-app,kubearmor-app!=kubearmor-snitch -n kubearmor
           kubectl get pods -A
@@ -114,9 +102,13 @@ jobs:
           go tool cover -func=gover.coverprofile
         working-directory: KubeArmor
         env:
-          GOPATH: /home/runner/go
-
+          GOPATH: /home/vagrant/go
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           files: ./KubeArmor/gover.coverprofile
+      - name: Run cleanup
+        if: ${{ always() }}
+        run: ./.github/workflows/cleanup.sh
+    
+

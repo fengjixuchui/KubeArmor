@@ -7,22 +7,22 @@ metadata:
     app.kubernetes.io/part-of: kubearmoroperator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: kubearmoroperator
-  name: kubearmorconfig-default
+  name: kubearmorconfig-test
   namespace: kubearmor
 spec:
-  defaultCapabilitiesPosture: audit
-  defaultFilePosture: audit
-  defaultNetworkPosture: audit
-  defaultVisibility: process,file,network
+  defaultCapabilitiesPosture: block
+  defaultFilePosture: block
+  defaultNetworkPosture: block
+  defaultVisibility: process,file,network,capabilities
   kubearmorImage:
-    image: kubearmor/kubearmor:stable
-    imagePullPolicy: Always
+    image: kubearmor/kubearmor-ubi:latest
+    imagePullPolicy: Never
   kubearmorInitImage:
-    image: kubearmor/kubearmor-init:stable
-    imagePullPolicy: Always
+    image: kubearmor/kubearmor-init:latest
+    imagePullPolicy: Never
   kubearmorRelayImage:
-    image: kubearmor/kubearmor-relay-server
+    image: kubearmor/kubearmor-relay-server:latest
     imagePullPolicy: Always
   kubearmorControllerImage:
-    image: kubearmor/kubearmor-controller
+    image: kubearmor/kubearmor-controller:latest
     imagePullPolicy: Always

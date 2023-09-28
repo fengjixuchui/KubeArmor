@@ -16,10 +16,7 @@ spec:
       - name: operator
         image: kubearmor/kubearmor-operator:latest
         imagePullPolicy: IfNotPresent
-        command:
-        - "/operator"
-        - "kubearmor-operator"
-        env: 
+        env:
         - name: KUBEARMOR_OPERATOR_NS
           valueFrom:
             fieldRef:
